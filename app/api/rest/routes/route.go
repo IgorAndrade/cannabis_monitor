@@ -16,8 +16,6 @@ type GetterDI interface {
 type handlerDiReq func(c echo.Context, ctn GetterDI) error
 
 func ApplyRoutes(e *echo.Echo) {
-	e.POST("/todo-list", injectDiReq(create))
-	e.GET("/todo-list", injectDiReq(getAll))
 }
 
 func injectDiReq(h handlerDiReq) echo.HandlerFunc {
