@@ -3,7 +3,7 @@ package route
 import (
 	"net/http"
 
-	"github.com/IgorAndrade/go-boilerplate/app/config"
+	"github.com/IgorAndrade/cannabis_monitor/app/config"
 	"github.com/labstack/echo/v4"
 )
 

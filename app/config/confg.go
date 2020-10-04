@@ -3,13 +3,26 @@ package config
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/sarulabs/di"
 )
 
+type Elasticsearch struct {
+	Address  string
+	Username string
+	Password string
+}
+
+type Globo struct {
+	Index        string
+	DocumentType string
+}
 type Config struct {
-	Rest  Rest
-	Mongo Mongo
+	Rest          Rest
+	Mongo         Mongo
+	Elasticsearch Elasticsearch
+	Globo         Globo
 }
 
 type Rest struct {
@@ -24,23 +37,38 @@ type Mongo struct {
 
 var CONFIG = "config"
 var c *Config
+var once = sync.Once{}
 
+func GetConfi() Config {
+	once.Do(func() {
+		c = &Config{
+			Rest: Rest{
+				Port: fmt.Sprintf(":%s", os.Getenv("API_PORT")),
+			},
+			Mongo: Mongo{
+				Address:  os.Getenv("MONGO_URL"),
+				User:     os.Getenv("MONGO_USER"),
+				Password: os.Getenv("MONGO_PASSWORD"),
+			},
+			Elasticsearch: Elasticsearch{
+				Address:  os.Getenv("ELASTICSEARCH_ADDRESS"),
+				Password: os.Getenv("ELASTICSEARCH_PASSWORD"),
+				Username: os.Getenv("ELASTICSEARCH_USERNAME"),
+			},
+			Globo: Globo{
+				DocumentType: os.Getenv("GLOBO_DOCUMENTTYPE"),
+				Index:        os.Getenv("GLOBO_INDEX"),
+			},
+		}
+	})
+	return *c
+}
 func Define(b *di.Builder) {
-	c = &Config{
-		Rest: Rest{
-			Port: fmt.Sprintf(":%s", os.Getenv("API_PORT")),
-		},
-		Mongo: Mongo{
-			Address:  os.Getenv("MONGO_URL"),
-			User:     os.Getenv("MONGO_USER"),
-			Password: os.Getenv("MONGO_PASSWORD"),
-		},
-	}
 	b.Add(di.Def{
 		Name:  CONFIG,
 		Scope: di.App,
 		Build: func(ctn di.Container) (interface{}, error) {
-			return c, nil
+			return GetConfi(), nil
 		},
 	})
 }

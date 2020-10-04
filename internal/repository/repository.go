@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/IgorAndrade/go-boilerplate/internal/model"
+	"github.com/IgorAndrade/cannabis_monitor/internal/model"
 )
 
 type Elasticsearch interface {

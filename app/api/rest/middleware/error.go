@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/IgorAndrade/go-boilerplate/app/apiErrors"
+	"github.com/IgorAndrade/cannabis_monitor/app/apiErrors"
 	"github.com/labstack/echo/v4"
 )
 

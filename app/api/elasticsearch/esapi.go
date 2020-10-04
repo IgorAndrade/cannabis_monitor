@@ -6,13 +6,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
-	"github.com/IgorAndrade/analytics-twitter/server/app/config"
-	"github.com/IgorAndrade/go-boilerplate/internal/model"
-	"github.com/IgorAndrade/go-boilerplate/internal/repository"
+	"github.com/IgorAndrade/cannabis_monitor/app/apiErrors"
+	"github.com/IgorAndrade/cannabis_monitor/app/config"
+	"github.com/IgorAndrade/cannabis_monitor/internal/model"
+	"github.com/IgorAndrade/cannabis_monitor/internal/repository"
 	"github.com/elastic/go-elasticsearch/esapi"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/mitchellh/mapstructure"
@@ -22,10 +25,10 @@ import (
 type Elasticsearch struct {
 	client       *elasticsearch.Client
 	index        string
-	documenttype string
+	documentType string
 }
 
-func newServer(cfg config.Elasticsearch, index string, documenttype string) (repository.Elasticsearch, error) {
+func NewServer(cfg config.Elasticsearch, index string, documentType string) (repository.Elasticsearch, error) {
 	elsCfg := elasticsearch.Config{
 		Addresses: []string{
 			cfg.Address,
@@ -47,7 +50,7 @@ func newServer(cfg config.Elasticsearch, index string, documenttype string) (rep
 
 	return &Elasticsearch{
 		client:       client,
-		documenttype: documenttype,
+		documentType: documentType,
 		index:        index,
 	}, nil
 }
@@ -55,7 +58,7 @@ func newServer(cfg config.Elasticsearch, index string, documenttype string) (rep
 func (s Elasticsearch) Post(p model.Post) error {
 	req := esapi.IndexRequest{
 		Index:        s.index,
-		DocumentType: s.documenttype,
+		DocumentType: s.documentType,
 		DocumentID:   p.GetID(),
 		Body:         strings.NewReader(p.String()),
 		Refresh:      "true",
@@ -65,9 +68,18 @@ func (s Elasticsearch) Post(p model.Post) error {
 
 	res, err := req.Do(ctx, s.client)
 	if res != nil {
-		res.Body.Close()
+		defer res.Body.Close()
+		if res.StatusCode < http.StatusOK || res.StatusCode >= 300 {
+			b, _ := ioutil.ReadAll(res.Body)
+			fmt.Println(string(b))
+			return apiErrors.InternalError.New(string(b))
+		}
+		if res.StatusCode == http.StatusCreated {
+			fmt.Println("new", p)
+		}
+
 	}
-	fmt.Println(p)
+
 	return err
 }
 

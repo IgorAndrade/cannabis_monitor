@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/IgorAndrade/go-boilerplate/app/api"
-	"github.com/IgorAndrade/go-boilerplate/app/api/rest/middleware"
-	route "github.com/IgorAndrade/go-boilerplate/app/api/rest/routes"
-	"github.com/IgorAndrade/go-boilerplate/app/config"
+	"github.com/IgorAndrade/cannabis_monitor/app/api"
+	"github.com/IgorAndrade/cannabis_monitor/app/api/rest/middleware"
+	route "github.com/IgorAndrade/cannabis_monitor/app/api/rest/routes"
+	"github.com/IgorAndrade/cannabis_monitor/app/config"
 	"github.com/labstack/echo/v4"
 )
 
