@@ -22,13 +22,16 @@ import (
 	"github.com/yalp/jsonpath"
 )
 
+const INDEX = "cannabis_monitor"
+const TYPE = "news"
+
 type Elasticsearch struct {
 	client       *elasticsearch.Client
 	index        string
 	documentType string
 }
 
-func NewServer(cfg config.Elasticsearch, index string, documentType string) (repository.Elasticsearch, error) {
+func NewServer(cfg config.Elasticsearch) (repository.Elasticsearch, error) {
 	elsCfg := elasticsearch.Config{
 		Addresses: []string{
 			cfg.Address,
@@ -50,8 +53,8 @@ func NewServer(cfg config.Elasticsearch, index string, documentType string) (rep
 
 	return &Elasticsearch{
 		client:       client,
-		documentType: documentType,
-		index:        index,
+		documentType: TYPE,
+		index:        INDEX,
 	}, nil
 }
 

@@ -17,12 +17,15 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+const PUBLISHER = "Globo"
+
 type QueryResult struct {
-	Page   string `json:"page,omitempty"`
-	Title  string `json:"title,omitempty"`
-	Detail string `json:"detail,omitempty"`
-	Link   string `json:"link,omitempty"`
-	Date   string `json:"Date,omitempty"`
+	Publisher string `json:"publisher,omitempty"`
+	Page      string `json:"page,omitempty"`
+	Title     string `json:"title,omitempty"`
+	Detail    string `json:"detail,omitempty"`
+	Link      string `json:"link,omitempty"`
+	Date      string `json:"Date,omitempty"`
 }
 
 func (q QueryResult) GetID() string {
@@ -82,13 +85,13 @@ func scraping(url string, ch chan QueryResult) func() error {
 				d := contA.ContentsFiltered(".widget--info__description").Text()
 				strDate := contA.ContentsFiltered(".widget--info__meta").Text()
 				q := QueryResult{
-					Page:   p,
-					Detail: strings.TrimSpace(d),
-					Title:  strings.TrimSpace(t),
-					Link:   a,
-					Date:   parseDate(strDate),
+					Publisher: PUBLISHER,
+					Page:      p,
+					Detail:    strings.TrimSpace(d),
+					Title:     strings.TrimSpace(t),
+					Link:      a,
+					Date:      parseDate(strDate),
 				}
-				//fmt.Println(q)
 				ch <- q
 			})
 		}

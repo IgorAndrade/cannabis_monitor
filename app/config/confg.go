@@ -22,7 +22,6 @@ type Config struct {
 	Rest          Rest
 	Mongo         Mongo
 	Elasticsearch Elasticsearch
-	Globo         Globo
 }
 
 type Rest struct {
@@ -54,10 +53,6 @@ func GetConfi() Config {
 				Address:  os.Getenv("ELASTICSEARCH_ADDRESS"),
 				Password: os.Getenv("ELASTICSEARCH_PASSWORD"),
 				Username: os.Getenv("ELASTICSEARCH_USERNAME"),
-			},
-			Globo: Globo{
-				DocumentType: os.Getenv("GLOBO_DOCUMENTTYPE"),
-				Index:        os.Getenv("GLOBO_INDEX"),
 			},
 		}
 	})
