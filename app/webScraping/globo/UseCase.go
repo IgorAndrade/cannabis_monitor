@@ -13,11 +13,13 @@ import (
 	"github.com/IgorAndrade/cannabis_monitor/app/webScraping"
 	"github.com/IgorAndrade/cannabis_monitor/internal/repository"
 	"github.com/PuerkitoBio/goquery"
+	yml "github.com/gookit/config/v2"
 	"golang.org/x/sync/errgroup"
 )
 
 const baseURL = "https://www.globo.com/busca/"
 const suffixURL = "&page=%d&order=recent&from=now-1d"
+const PUBLISHER = "Globo"
 
 type Explorer struct {
 	elastic   repository.Elasticsearch
@@ -54,6 +56,9 @@ func NewExplorer(rep repository.Elasticsearch, fnc ...ExplorerConf) webScraping.
 }
 
 func (e Explorer) Search(words []string) {
+	if yml.String("Globo.Enable", "false") != "true" {
+		return
+	}
 	urls := make([]string, len(words))
 	for i, w := range words {
 		url := fmt.Sprintf("%s?q=%s%s", e.baseURL, w, e.suffixURL)
@@ -65,20 +70,20 @@ func (e Explorer) Search(words []string) {
 	}
 }
 
-func (e Explorer) Scraping(urls []string) <-chan QueryResult {
-	ch := make(chan QueryResult, 10)
+func (e Explorer) Scraping(urls []string) <-chan webScraping.QueryResult {
+	ch := make(chan webScraping.QueryResult, 10)
 	g, _ := errgroup.WithContext(context.TODO())
 	for _, url := range urls {
 		g.Go(e.scraping(url, ch))
 	}
-	go func(g *errgroup.Group, ch chan QueryResult) {
+	go func(g *errgroup.Group, ch chan webScraping.QueryResult) {
 		g.Wait()
 		close(ch)
 	}(g, ch)
 	return ch
 }
 
-func (e Explorer) scraping(url string, ch chan QueryResult) func() error {
+func (e Explorer) scraping(url string, ch chan webScraping.QueryResult) func() error {
 	return func() error {
 		for p := 1; ; p++ {
 			urlPage := fmt.Sprintf(url, p)
@@ -107,7 +112,7 @@ func (e Explorer) scraping(url string, ch chan QueryResult) func() error {
 				t := contA.ContentsFiltered(".widget--info__title").Text()
 				d := contA.ContentsFiltered(".widget--info__description").Text()
 				strDate := contA.ContentsFiltered(".widget--info__meta").Text()
-				q := QueryResult{
+				q := webScraping.QueryResult{
 					Publisher: PUBLISHER,
 					Page:      p,
 					Detail:    strings.TrimSpace(d),

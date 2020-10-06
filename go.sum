@@ -1,7 +1,4 @@
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/IgorAndrade/analytics-twitter v0.0.0-20201003192532-c2eecb367819 h1:Tw4631S8GRsQ6KkXtpWyOiIPKDiXEkQc39ZWq7AIQQA=
-github.com/IgorAndrade/analytics-twitter/server v0.0.0-20201003192532-c2eecb367819 h1:DgUebImlZzVAmKGKtN2YwcXoPa1/95B9ZmjMnpH1AAc=
-github.com/IgorAndrade/analytics-twitter/server v0.0.0-20201003192532-c2eecb367819/go.mod h1:DCCPG1f9g5ax/wOHVCltO2rQjlw/ScGEx3xnlYoJHJQ=
 github.com/IgorAndrade/go-boilerplate v0.0.0-20200917234032-59ff7006f99a h1:3iMkuwxEiNHLP3QTMnaAI7eROVnIxa6QhxlPLZjWuOI=
 github.com/IgorAndrade/go-boilerplate v0.0.0-20200917234032-59ff7006f99a/go.mod h1:uEIZIb6jtobdmIe2bNzRnBeJjYMtPswHaK6NOGgK25U=
 github.com/PuerkitoBio/goquery v1.5.1 h1:PSPBGne8NIUWw+/7vFBV+kG2J/5MOjbzc7154OaKCSE=

@@ -1,14 +1,17 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 
 	"github.com/IgorAndrade/cannabis_monitor/app/api/elasticsearch"
 	"github.com/IgorAndrade/cannabis_monitor/app/config"
+	"github.com/IgorAndrade/cannabis_monitor/app/webScraping/estadao"
 	"github.com/IgorAndrade/cannabis_monitor/app/webScraping/globo"
 	yml "github.com/gookit/config/v2"
 	"github.com/gookit/config/v2/yaml"
+	"golang.org/x/sync/errgroup"
 )
 
 type Ya struct {
@@ -36,7 +39,18 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	serv := globo.NewExplorer(rep)
 	words := yml.Strings("words")
-	serv.Search(words)
+	globo := globo.NewExplorer(rep)
+	estadao := estadao.NewExplorer(rep)
+	g, _ := errgroup.WithContext(context.TODO())
+	g.Go(func() error {
+		globo.Search(words)
+		return nil
+	})
+	g.Go(func() error {
+		estadao.Search(words)
+		return nil
+	})
+
+	g.Wait()
 }
