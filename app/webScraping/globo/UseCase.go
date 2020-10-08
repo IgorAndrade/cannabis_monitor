@@ -18,7 +18,7 @@ import (
 )
 
 const baseURL = "https://www.globo.com/busca/"
-const suffixURL = "&page=%d&order=recent&from=now-1d"
+const suffixURL = "&page=%d&order=recent&from=now-1M"
 const PUBLISHER = "Globo"
 
 type Explorer struct {
@@ -61,7 +61,7 @@ func (e Explorer) Search(words []string) {
 	}
 	urls := make([]string, len(words))
 	for i, w := range words {
-		url := fmt.Sprintf("%s?q=%s%s", e.baseURL, w, e.suffixURL)
+		url := fmt.Sprintf(`%s?q="%s"%s`, e.baseURL, w, e.suffixURL)
 		urls[i] = url
 	}
 	ch := e.Scraping(urls)
@@ -85,7 +85,7 @@ func (e Explorer) Scraping(urls []string) <-chan webScraping.QueryResult {
 
 func (e Explorer) scraping(url string, ch chan webScraping.QueryResult) func() error {
 	return func() error {
-		for p := 1; ; p++ {
+		for p := 1; p < 30; p++ {
 			urlPage := fmt.Sprintf(url, p)
 			fmt.Printf("url: %s \n\n", urlPage)
 			response, err := http.Get(urlPage)
@@ -123,6 +123,7 @@ func (e Explorer) scraping(url string, ch chan webScraping.QueryResult) func() e
 				ch <- q
 			})
 		}
+		return nil
 	}
 }
 

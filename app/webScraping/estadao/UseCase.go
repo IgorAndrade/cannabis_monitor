@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,7 +18,7 @@ import (
 )
 
 //const baseURL = "https://busca.estadao.com.br/?tipo_conteudo=Todos"
-const baseURL = "https://busca.estadao.com.br/modulos/busca-resultado?modulo=busca-resultado&config%5Bbusca%5D%5Bpage%5D=4&config%5Bbusca%5D%5Bparams%5D=tipo_conteudo%3DTodos%26quando%3Dno-ultimo-mes%26q%3Dmaconha&ajax=1"
+const baseURL = "https://busca.estadao.com.br/modulos/busca-resultado?modulo=busca-resultado&config%5Bbusca%5D%5Bpage%5D=0&config%5Bbusca%5D%5Bparams%5D=tipo_conteudo%3DTodos%26quando%3Dno-ultimo-mes%26q%3DWORD&ajax=1"
 const PAGE = "&config%5Bbusca%5D%5Bpage%5D="
 const PUBLISHER = "Estadao"
 
@@ -36,14 +37,13 @@ type ExplorerConf func(*Explorer)
 func WithWhen(when string) ExplorerConf {
 	return func(e *Explorer) {
 
-		e.When = "%26quando%3D" + when
+		e.BaseURL = strings.Replace(e.BaseURL, "no-ultimo-mes", when, 1)
 	}
 }
 func NewExplorer(rep repository.Elasticsearch, fnc ...ExplorerConf) webScraping.Explorer {
 	e := &Explorer{
 		elastic: rep,
 		BaseURL: baseURL,
-		When:    "%26quando%3Dnas-ultimas-24-horas",
 		Clocker: webScraping.ClockerImp{},
 	}
 	for _, f := range fnc {
@@ -58,7 +58,7 @@ func (e Explorer) Search(words []string) {
 	}
 	urls := make([]string, len(words))
 	for i, w := range words {
-		url := e.BaseURL + e.When + "%26q%3D" + w
+		url := strings.Replace(e.BaseURL, "WORD", w, 1)
 		urls[i] = url
 	}
 	ch := e.Scraping(urls)
@@ -82,10 +82,9 @@ func (e Explorer) Scraping(urls []string) <-chan webScraping.QueryResult {
 
 func (e Explorer) scraping(url string, ch chan webScraping.QueryResult) func() error {
 	return func() error {
-		for p := 1; ; p++ {
-
-			urlPage := fmt.Sprintf("%s%s%d", url, PAGE, p)
-			fmt.Printf("url: %s \n\n page %d", urlPage, p)
+		for p := 1; p < 30; p++ {
+			urlPage := strings.Replace(url, "page%5D=0", "page%5D="+strconv.Itoa(p), 1)
+			fmt.Printf("url: %s \n\n page %d \n\n", urlPage, p)
 			response, err := http.Get(urlPage)
 			if err != nil {
 				log.Println(err)
