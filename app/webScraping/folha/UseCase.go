@@ -1,4 +1,4 @@
-package estadao
+package folha
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -17,33 +16,32 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-//const baseURL = "https://busca.estadao.com.br/?tipo_conteudo=Todos"
-const baseURL = "https://busca.estadao.com.br/modulos/busca-resultado?modulo=busca-resultado&config%5Bbusca%5D%5Bpage%5D=0&config%5Bbusca%5D%5Bparams%5D=tipo_conteudo%3DTodos%26quando%3Dno-ultimo-mes%26q%3DWORD&ajax=1"
-const PAGE = "&config%5Bbusca%5D%5Bpage%5D="
-const PUBLISHER = "Estadao"
-
-//https://busca.estadao.com.br/modulos/busca-resultado?modulo=busca-resultado&config[busca][page]=3&config[busca][params]=tipo_conteudo=Todos&quando=no-ultimo-mes&q=maconha&ajax=1
-//https://busca.estadao.com.br/?tipo_conteudo=Todos&quando=nas-ultimas-24-horas&q=cannabis
+const baseURL = "https://search.folha.uol.com.br/search?q=WORD&site=todos&periodo=WHEN"
+const PUBLISHER = "Folha"
 
 type Explorer struct {
-	elastic repository.Elasticsearch
-	baseURL string
-	When    string
-	Clocker webScraping.Clocker
+	elastic   repository.Elasticsearch
+	baseURL   string
+	suffixURL string
+	Clocker   webScraping.Clocker
 }
 
 type ExplorerConf func(*Explorer)
 
+func WithBaseURL(baseURL string) ExplorerConf {
+	return func(e *Explorer) {
+		e.baseURL = baseURL
+	}
+}
 func WithWhen(when string) ExplorerConf {
 	return func(e *Explorer) {
-
-		e.baseURL = strings.Replace(e.baseURL, "no-ultimo-mes", when, 1)
+		e.baseURL = strings.Replace(e.baseURL, "WHEN", when, 1)
 	}
 }
 func NewExplorer(rep repository.Elasticsearch, fnc ...ExplorerConf) webScraping.Explorer {
 	e := &Explorer{
 		elastic: rep,
-		baseURL: baseURL,
+		baseURL: strings.Replace(baseURL, "WHEN", "mes", 1),
 		Clocker: webScraping.ClockerImp{},
 	}
 	for _, f := range fnc {
@@ -53,7 +51,7 @@ func NewExplorer(rep repository.Elasticsearch, fnc ...ExplorerConf) webScraping.
 }
 
 func (e Explorer) Search(words []string) {
-	if yml.String("Estadao.Enable", "false") != "true" {
+	if yml.String("Folha.Enable", "false") != "true" {
 		return
 	}
 	urls := make([]string, len(words))
@@ -82,8 +80,8 @@ func (e Explorer) Scraping(urls []string) <-chan webScraping.QueryResult {
 
 func (e Explorer) scraping(url string, ch chan webScraping.QueryResult) func() error {
 	return func() error {
-		for p := 1; p < 30; p++ {
-			urlPage := strings.Replace(url, "page%5D=0", "page%5D="+strconv.Itoa(p), 1)
+		for p := 1; p < 30; p += 10 {
+			urlPage := fmt.Sprintf("%s&sr=%d", url, p)
 			fmt.Printf("url: %s \n\n page %d \n\n", urlPage, p)
 			response, err := http.Get(urlPage)
 			if err != nil {
@@ -99,18 +97,18 @@ func (e Explorer) scraping(url string, ch chan webScraping.QueryResult) func() e
 				return err
 			}
 
-			if document.Find(".item-lista-busca").Size() < 1 {
+			if document.Find(".c-headline--newslist").Size() < 1 {
 				return nil
 			}
-			document.Find(".item-lista-busca").Each(func(i int, s *goquery.Selection) {
-				p := s.Find(".cor-e").Text()
+			document.Find(".c-headline--newslist").Each(func(i int, s *goquery.Selection) {
+				p := s.Find(".c-search__result_h3").Text()
 
-				contA := s.Find(".link-title")
+				contA := s.Find(".c-headline__content a")
 				a, _ := contA.Attr("href")
-				t := contA.Text()
+				t := contA.Find(".c-headline__title").Text()
 
 				d := contA.Find("p").Text()
-				strDate := s.Find(".data-posts").Text()
+				strDate := s.Find("time").Text()
 				q := webScraping.QueryResult{
 					Publisher: PUBLISHER,
 					Page:      p,
@@ -127,7 +125,7 @@ func (e Explorer) scraping(url string, ch chan webScraping.QueryResult) func() e
 }
 
 func (e Explorer) parseDate(str string) string {
-	var re = regexp.MustCompile(`(\d\d) de\s+(\S+)\s+de\s+(\d{4}).+\s(\d{1,2})h(\d{1,2})`)
+	var re = regexp.MustCompile(`(\d{1,2})\.(\S{3})\.(\d{4})\D+(\d{1,2})h(\d{1,2})`)
 	match := re.FindAllStringSubmatch(str, -1)
 	if len(match) == 0 {
 		return e.Clocker.Now().Format(time.RFC3339)
@@ -143,16 +141,16 @@ func (e Explorer) parseDate(str string) string {
 }
 
 var mapDate = map[string]string{
-	"janeiro":   "01",
-	"fevereiro": "02",
-	"março":     "03",
-	"abril":     "04",
-	"maio":      "05",
-	"junho":     "06",
-	"julho":     "07",
-	"agosto":    "08",
-	"setembro":  "09",
-	"outubro":   "10",
-	"novembro":  "11",
-	"dezembro":  "12",
+	"jan": "01",
+	"fev": "02",
+	"mar": "03",
+	"abr": "04",
+	"mai": "05",
+	"jun": "06",
+	"jul": "07",
+	"ago": "08",
+	"set": "09",
+	"out": "10",
+	"nov": "11",
+	"dez": "12",
 }
