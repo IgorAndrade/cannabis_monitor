@@ -1,10 +1,13 @@
 package webScraping
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type Explorer interface {
@@ -47,4 +50,17 @@ func (c ClockerImp) Now() time.Time {
 		return time.Now().Local()
 	}
 	return c.Fnc()
+}
+
+type Scraping []Explorer
+
+func (list Scraping) Search(words []string) error {
+	g, _ := errgroup.WithContext(context.TODO())
+	for _, s := range list {
+		g.Go(func() error {
+			s.Search(words)
+			return nil
+		})
+	}
+	return g.Wait()
 }
